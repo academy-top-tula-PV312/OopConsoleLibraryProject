@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <conio.h>
 #include <Windows.h>
 
 enum Color
@@ -21,6 +22,28 @@ enum Color
 	Yellow,
 	White
 };
+
+enum BorderStyle
+{
+	Single,
+	Double
+};
+
+enum Border
+{
+	TopLeft,
+	TopCenter,
+	TopRight,
+	MiddleLeft,
+	MiddleCenter,
+	MiddleRight,
+	BottomLeft,
+	BottomCenter,
+	BottomRight,
+	Horizontal,
+	Vertical
+};
+
 
 class Console
 {
@@ -46,12 +69,67 @@ public:
 	void WritePosition(int row, int column, const char* cstr);
 	void WritePosition(int row, int column, std::string str);
 
-	void WritePositionWidth(int row, int column, char symbol);
-	void WritePositionWidth(int row, int column, const char* cstr);
-	void WritePositionWidth(int row, int column, std::string str);
+	void WritePositionWidth(int row, int column, int width, char symbol);
+	void WritePositionWidth(int row, int column, int width, const char* cstr);
+	void WritePositionWidth(int row, int column, int width, std::string str);
 
 	void WriteColor(char symbol, Color back, Color fore);
 	void WriteColor(const char* cstr, Color back, Color fore);
 	void WriteColor(std::string str, Color back, Color fore);
+
+	void Clear();
+	int GetChar();
+	int KeyPressed();
 };
 
+class WindowConsole
+{
+protected:
+	Console* console;
+
+	int row;
+	int column;
+	int width;
+	int height;
+
+	bool isBorder;
+	BorderStyle borderStyle;
+
+	std::string title;
+
+	Color colorBack;
+	Color colorFore;
+
+	bool isVisible;
+
+	CHAR_INFO* bufferSave;
+	CHAR_INFO* bufferWin;
+
+public:
+	WindowConsole(Console* console);
+	WindowConsole(Console* console, int row, int column, int width, int height);
+
+	int Row() { return row; }
+	int Column() { return column; }
+	int Width() { return width; }
+	int Height() { return height; }
+
+	void SetPosition(int row, int column);
+	void SetSize(int width, int height);
+
+	bool& IsBorder() { return isBorder; }
+	BorderStyle& Style() { return borderStyle; }
+
+	std::string Title() { return title; }
+	void SetTitle(std::string title);
+
+	Color& ColorBack() { return colorBack; }
+	Color& ColorFore() { return colorFore; }
+
+	bool IsVisible() { return isVisible; }
+	void SetVisible(bool isVisible);
+
+	virtual void Show();
+	virtual void Hide();
+
+};

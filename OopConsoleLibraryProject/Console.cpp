@@ -1,11 +1,23 @@
 #include "Console.h"
 
-Console::Console()
+int BorderSingle[]{ 0x250C, 0x252C, 0x2510, 0x251C, 0x253C, 0x2524, 0x2514, 0x2534, 0x2518, 0x2500, 0x2502 };
+int BorderDouble[]{ 0x2554, 0x2566, 0x2557, 0x2560, 0x256C, 0x2563, 0x255A, 0x2569, 0x255D, 0x2550, 0x2551 };
+
+
+Console::Console() : Console(120, 30) {}
+
+Console::Console(int width, int height)  
 {
 	descriptor = GetStdHandle(STD_OUTPUT_HANDLE);
-}
 
-Console::Console(int width, int height) : Console() {}
+	SMALL_RECT rect;
+	rect.Top = 0;
+	rect.Left = 0;
+	rect.Right = width - 1;
+	rect.Bottom = height - 1;
+
+	SetConsoleWindowInfo(descriptor, true, &rect);
+}
 
 HANDLE& Console::Descriptor()
 {
@@ -49,3 +61,106 @@ void Console::Background(Color color)
 	byte colorBack = (byte)color << 4;
 	SetConsoleTextAttribute(descriptor, colorBack | colorFore);
 }
+
+void Console::Clear()
+{
+	std::system("cls");
+}
+
+int Console::GetChar()
+{
+	int key = _getch();
+
+	if (key == 0 || key == 0xE0)
+		key = _getch();
+
+	return key;
+}
+
+int Console::KeyPressed()
+{
+	return _kbhit();
+}
+
+
+
+
+
+
+WindowConsole::WindowConsole(Console* console)
+{
+}
+
+WindowConsole::WindowConsole(Console* console, 
+							int row, int column, 
+							int width, int height)
+	: console { console },
+	row{ row }, column { column },
+	width{ width }, height { height }
+{
+	isBorder = true;
+	borderStyle = BorderStyle::Single;
+	colorBack = Color::Blue;
+	colorFore = Color::White;
+
+	isVisible = false;
+
+	bufferSave = new CHAR_INFO[width * height];
+	bufferWin = new CHAR_INFO[width * height];
+}
+
+void WindowConsole::Show()
+{
+	if (isVisible) return;
+
+	COORD bufferSize{ width, height };
+	COORD bufferPosition{ 0, 0 };
+	SMALL_RECT rect{ column, row, column + width, row + height };
+	
+	bool isSuccess = ReadConsoleOutput(console->Descriptor(),
+										bufferSave,
+										bufferSize,
+										bufferPosition,
+										&rect);
+
+	WORD attribute = colorFore | (colorBack << 4);
+
+	int* border = (borderStyle == BorderStyle::Single) ? BorderSingle : BorderDouble;
+
+	int index{};
+
+	for (int r = 0; r < height; r++)
+		for (int c = 0; c < width; c++)
+		{
+			bufferWin[index].Char.UnicodeChar = ' ';
+			bufferWin[index++].Attributes = attribute;
+		}
+
+	isSuccess = WriteConsoleOutput(console->Descriptor(),
+									bufferWin,
+									bufferSize,
+									bufferPosition,
+									&rect);
+
+	isVisible = true;
+}
+
+void WindowConsole::Hide()
+{
+	if (!isVisible) return;
+
+	COORD bufferSize{ width, height };
+	COORD bufferPosition{ 0, 0 };
+	SMALL_RECT rect{ column, row, column + width, row + height };
+
+	bool isSuccess = WriteConsoleOutput(console->Descriptor(),
+											bufferSave,
+											bufferSize,
+											bufferPosition,
+											&rect);
+
+	isVisible = false;
+}
+
+
+
