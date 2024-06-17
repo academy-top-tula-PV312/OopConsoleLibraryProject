@@ -87,9 +87,8 @@ int Console::KeyPressed()
 
 
 
-WindowConsole::WindowConsole(Console* console)
-{
-}
+WindowConsole::WindowConsole(Console* console) 
+	: WindowConsole(console, 0, 0, 80, 30) {}
 
 WindowConsole::WindowConsole(Console* console, 
 							int row, int column, 
@@ -107,6 +106,11 @@ WindowConsole::WindowConsole(Console* console,
 
 	bufferSave = new CHAR_INFO[width * height];
 	bufferWin = new CHAR_INFO[width * height];
+}
+
+void WindowConsole::SetTitle(std::string title)
+{
+	this->title = title;
 }
 
 void WindowConsole::Show()
@@ -135,6 +139,43 @@ void WindowConsole::Show()
 			bufferWin[index].Char.UnicodeChar = ' ';
 			bufferWin[index++].Attributes = attribute;
 		}
+
+	if (isBorder)
+	{
+		bufferWin[0].Char.UnicodeChar = border[Border::TopLeft];
+		for(index = 1; index < width - 1; index++)
+			bufferWin[index].Char.UnicodeChar = border[Border::Horizontal];
+		bufferWin[index++].Char.UnicodeChar = border[Border::TopRight];
+
+		for (int row = 1; row < height - 1; row++)
+		{
+			bufferWin[index].Char.UnicodeChar = border[Border::Vertical];
+			index += width - 1;
+			bufferWin[index++].Char.UnicodeChar = border[Border::Vertical];
+		}
+
+		bufferWin[index++].Char.UnicodeChar = border[Border::BottomLeft];
+		
+		int lwidth{ index + width - 2 };
+		for (index; index < lwidth; index++)
+			bufferWin[index].Char.UnicodeChar = border[Border::Horizontal];
+
+		bufferWin[index].Char.UnicodeChar = border[Border::BottomRight];
+	}
+
+	if (title.length() > 0)
+	{
+		bufferWin[1].Char.UnicodeChar = ' ';
+		index = 2;
+		std::for_each(std::begin(title), std::end(title),
+			[&](char ch)
+			{
+				bufferWin[index++].Char.UnicodeChar = ch;
+			});
+		bufferWin[index].Char.UnicodeChar = ' ';
+	}
+	
+
 
 	isSuccess = WriteConsoleOutput(console->Descriptor(),
 									bufferWin,

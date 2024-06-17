@@ -6,11 +6,19 @@ int main()
     Console console;
 
     WindowConsole win(&console, 5, 10, 30, 10);
+    win.IsBorder() = true;
+    win.Style() = BorderStyle::Single;
+    win.SetTitle("Hello world");
+
     win.Show();
 
     console.GetChar();
 
     WindowConsole win2(&console, 11, 20, 30, 10);
+    win2.IsBorder() = true;
+    win2.Style() = BorderStyle::Double;
+    //win2.SetTitle("Hello world");
+
     win2.ColorBack() = Color::Red;
     win2.Show();
 
